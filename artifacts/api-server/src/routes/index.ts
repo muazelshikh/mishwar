@@ -13,6 +13,7 @@ import driverPortalRouter from "./driver_portal";
 import adminRouter from "./admin";
 import ownerPortalRouter from "./owner_portal";
 import businessPortalRouter from "./business_portal";
+import walletRouter from "./wallet";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(driverPortalRouter);
 router.use(adminRouter);
 router.use(ownerPortalRouter);
 router.use(businessPortalRouter);
+router.use(walletRouter);
 
 export default router;

@@ -6,6 +6,7 @@ import {
   Share2, Key, Briefcase, Shield, UserCog, Grid3X3,
   Heart, Package, GraduationCap, Stethoscope, Building2,
   MoonStar, Palmtree, PartyPopper, MapPin, CarFront, Factory,
+  Wallet,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -24,6 +25,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     { href: "/", label: "الرحلات الفردية", icon: Car },
     { href: "/services", label: "جميع الخدمات", icon: Grid3X3 },
     { href: "/rides", label: "رحلاتي", icon: Route },
+    { href: "/wallet", label: "محفظتي", icon: Wallet },
     { href: "/group-trips", label: "الرحلات الجماعية", icon: Users },
     { href: "/subscriptions", label: "اشتراكاتي", icon: CalendarDays },
     { href: "/invite-trips", label: "رحلات الدعوة", icon: Share2 },

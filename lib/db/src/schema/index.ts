@@ -9,3 +9,6 @@ export * from "./rentals";
 export * from "./driver_bookings";
 export * from "./car_owners";
 export * from "./organizations";
+export * from "./wallets";
+export * from "./wallet_transactions";
+export * from "./payments";

@@ -34,6 +34,7 @@ import Tourism from "@/pages/tourism";
 import Events from "@/pages/events";
 import OwnerPortal from "@/pages/owner-portal";
 import BusinessPortal from "@/pages/business-portal";
+import Wallet from "@/pages/wallet";
 
 const queryClient = new QueryClient();
 
@@ -96,6 +97,9 @@ function Router() {
       <Route path="/hajj-umrah" component={() => <ProtectedRoute component={HajjUmrah} />} />
       <Route path="/tourism" component={() => <ProtectedRoute component={Tourism} />} />
       <Route path="/events" component={() => <ProtectedRoute component={Events} />} />
+
+      {/* Wallet */}
+      <Route path="/wallet" component={() => <ProtectedRoute component={Wallet} />} />
 
       {/* Portals */}
       <Route path="/owner-portal" component={() => <ProtectedRoute component={OwnerPortal} />} />
