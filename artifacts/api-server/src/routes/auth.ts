@@ -2,7 +2,7 @@ import { Router } from "express";
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import { db, usersTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { RegisterUserBody, LoginUserBody } from "@workspace/api-zod";
 import { requireAuth, signToken } from "../middlewares/auth";
 
@@ -83,7 +83,13 @@ router.post("/auth/login", async (req, res) => {
   if (needsRehash) {
     try {
       const newHash = await hashPassword(password);
-      await db.update(usersTable).set({ passwordHash: newHash }).where(eq(usersTable.id, user.id));
+      // Conditional update: only succeeds if the stored hash hasn't changed since
+      // we read it. If two concurrent logins race, only one rehash wins; the other
+      // is a no-op and the user stays valid (next login will see the bcrypt hash).
+      await db
+        .update(usersTable)
+        .set({ passwordHash: newHash })
+        .where(and(eq(usersTable.id, user.id), eq(usersTable.passwordHash, user.passwordHash)));
     } catch (e) {
       console.error("Failed to rehash legacy password:", e);
     }

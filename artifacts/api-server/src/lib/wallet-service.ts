@@ -1,5 +1,5 @@
 import { db, walletsTable, walletTransactionsTable } from "@workspace/db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export type CreditOptions = {
   userId: number;
@@ -45,54 +45,66 @@ async function ensureAndLockWallet(tx: any, userId: number) {
   return wallet;
 }
 
-export async function creditWallet(opts: CreditOptions) {
+async function _credit(tx: any, opts: CreditOptions) {
   if (opts.amount <= 0) throw new Error("Credit amount must be positive");
-  return await db.transaction(async (tx) => {
-    const wallet = await ensureAndLockWallet(tx, opts.userId);
-    const newBalance = wallet.balance + opts.amount;
-    await tx.update(walletsTable).set({ balance: newBalance }).where(eq(walletsTable.id, wallet.id));
-    const [txn] = await tx
-      .insert(walletTransactionsTable)
-      .values({
-        walletId: wallet.id,
-        userId: opts.userId,
-        type: opts.type,
-        amount: opts.amount,
-        balanceAfter: newBalance,
-        status: "completed",
-        description: opts.description ?? null,
-        referenceType: opts.referenceType ?? null,
-        referenceId: opts.referenceId ?? null,
-        stripePaymentIntentId: opts.stripePaymentIntentId ?? null,
-      })
-      .returning();
-    return { wallet: { ...wallet, balance: newBalance }, transaction: txn };
-  });
+  const wallet = await ensureAndLockWallet(tx, opts.userId);
+  const newBalance = wallet.balance + opts.amount;
+  await tx.update(walletsTable).set({ balance: newBalance }).where(eq(walletsTable.id, wallet.id));
+  const [txn] = await tx
+    .insert(walletTransactionsTable)
+    .values({
+      walletId: wallet.id,
+      userId: opts.userId,
+      type: opts.type,
+      amount: opts.amount,
+      balanceAfter: newBalance,
+      status: "completed",
+      description: opts.description ?? null,
+      referenceType: opts.referenceType ?? null,
+      referenceId: opts.referenceId ?? null,
+      stripePaymentIntentId: opts.stripePaymentIntentId ?? null,
+    })
+    .returning();
+  return { wallet: { ...wallet, balance: newBalance }, transaction: txn };
+}
+
+async function _debit(tx: any, opts: DebitOptions) {
+  if (opts.amount <= 0) throw new Error("Debit amount must be positive");
+  const wallet = await ensureAndLockWallet(tx, opts.userId);
+  const newBalance = wallet.balance - opts.amount;
+  if (newBalance < 0 && !opts.allowNegative) {
+    throw new InsufficientFundsError(wallet.balance, opts.amount);
+  }
+  await tx.update(walletsTable).set({ balance: newBalance }).where(eq(walletsTable.id, wallet.id));
+  const [txn] = await tx
+    .insert(walletTransactionsTable)
+    .values({
+      walletId: wallet.id,
+      userId: opts.userId,
+      type: opts.type,
+      amount: -opts.amount,
+      balanceAfter: newBalance,
+      status: "completed",
+      description: opts.description ?? null,
+      referenceType: opts.referenceType ?? null,
+      referenceId: opts.referenceId ?? null,
+    })
+    .returning();
+  return { wallet: { ...wallet, balance: newBalance }, transaction: txn };
+}
+
+export async function creditWallet(opts: CreditOptions) {
+  return await db.transaction((tx) => _credit(tx, opts));
 }
 
 export async function debitWallet(opts: DebitOptions) {
-  if (opts.amount <= 0) throw new Error("Debit amount must be positive");
-  return await db.transaction(async (tx) => {
-    const wallet = await ensureAndLockWallet(tx, opts.userId);
-    const newBalance = wallet.balance - opts.amount;
-    if (newBalance < 0 && !opts.allowNegative) {
-      throw new InsufficientFundsError(wallet.balance, opts.amount);
-    }
-    await tx.update(walletsTable).set({ balance: newBalance }).where(eq(walletsTable.id, wallet.id));
-    const [txn] = await tx
-      .insert(walletTransactionsTable)
-      .values({
-        walletId: wallet.id,
-        userId: opts.userId,
-        type: opts.type,
-        amount: -opts.amount,
-        balanceAfter: newBalance,
-        status: "completed",
-        description: opts.description ?? null,
-        referenceType: opts.referenceType ?? null,
-        referenceId: opts.referenceId ?? null,
-      })
-      .returning();
-    return { wallet: { ...wallet, balance: newBalance }, transaction: txn };
-  });
+  return await db.transaction((tx) => _debit(tx, opts));
+}
+
+export async function creditWalletInTx(tx: any, opts: CreditOptions) {
+  return _credit(tx, opts);
+}
+
+export async function debitWalletInTx(tx: any, opts: DebitOptions) {
+  return _debit(tx, opts);
 }

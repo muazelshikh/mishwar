@@ -21,48 +21,68 @@ router.post("/ratings", requireAuth, async (req, res) => {
   }
   const { rideId, rating, comment } = parsed.data;
 
-  const [ride] = await db.select().from(ridesTable).where(eq(ridesTable.id, rideId)).limit(1);
-  if (!ride) { res.status(404).json({ error: "Ride not found" }); return; }
-  if (ride.status !== "completed") {
-    res.status(400).json({ error: "Can only rate completed rides" });
-    return;
-  }
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [ride] = await tx.select().from(ridesTable).where(eq(ridesTable.id, rideId)).limit(1);
+      if (!ride) return { error: "not_found" as const };
+      if (ride.status !== "completed") return { error: "not_completed" as const };
 
-  let ratedUserId: number;
-  if (ride.passengerId === userId) {
-    if (!ride.driverId) { res.status(400).json({ error: "No driver assigned to ride" }); return; }
-    const [driver] = await db.select().from(driversTable).where(eq(driversTable.id, ride.driverId)).limit(1);
-    if (!driver) { res.status(404).json({ error: "Driver not found" }); return; }
-    ratedUserId = driver.userId;
-  } else {
-    const [driver] = await db.select().from(driversTable).where(eq(driversTable.userId, userId)).limit(1);
-    if (!driver || driver.id !== ride.driverId) {
-      res.status(403).json({ error: "Not authorized to rate this ride" });
+      let ratedUserId: number;
+      if (ride.passengerId === userId) {
+        if (!ride.driverId) return { error: "no_driver" as const };
+        const [driver] = await tx.select().from(driversTable).where(eq(driversTable.id, ride.driverId)).limit(1);
+        if (!driver) return { error: "driver_missing" as const };
+        ratedUserId = driver.userId;
+      } else {
+        const [driver] = await tx.select().from(driversTable).where(eq(driversTable.userId, userId)).limit(1);
+        if (!driver || driver.id !== ride.driverId) return { error: "forbidden" as const };
+        ratedUserId = ride.passengerId;
+      }
+
+      // Block self-rating defensively even if data is corrupt
+      if (ratedUserId === userId) return { error: "self_rating" as const };
+
+      const [created] = await tx.insert(ratingsTable).values({
+        rideId, raterId: userId, ratedUserId, rating, comment: comment ?? null,
+      }).returning();
+
+      // Recompute average inside the same transaction so concurrent rating inserts
+      // (different riders rating the same driver) all see consistent values
+      const aggResult: any = await tx.execute(sql`
+        SELECT AVG(rating)::real AS avg, COUNT(*)::int AS cnt
+        FROM ratings WHERE rated_user_id = ${ratedUserId}
+      `);
+      const row = (aggResult.rows ?? aggResult)[0];
+      const avg = row?.avg ?? null;
+
+      if (avg !== null) {
+        await tx.update(usersTable).set({ rating: avg }).where(eq(usersTable.id, ratedUserId));
+        const [driverRow] = await tx.select().from(driversTable).where(eq(driversTable.userId, ratedUserId)).limit(1);
+        if (driverRow) {
+          await tx.update(driversTable).set({ rating: avg }).where(eq(driversTable.id, driverRow.id));
+        }
+      }
+
+      return { ok: true as const, rating: created, newAverage: avg, totalRatings: row?.cnt ?? 0 };
+    });
+
+    if ("error" in result && result.error) {
+      const map: Record<string, { status: number; msg: string }> = {
+        not_found: { status: 404, msg: "Ride not found" },
+        not_completed: { status: 400, msg: "Can only rate completed rides" },
+        no_driver: { status: 400, msg: "No driver assigned to ride" },
+        driver_missing: { status: 404, msg: "Driver not found" },
+        forbidden: { status: 403, msg: "Not authorized to rate this ride" },
+        self_rating: { status: 400, msg: "Cannot rate yourself" },
+      };
+      const m = map[result.error] ?? { status: 500, msg: "Unknown error" };
+      res.status(m.status).json({ error: m.msg });
       return;
     }
-    ratedUserId = ride.passengerId;
-  }
 
-  try {
-    const [created] = await db.insert(ratingsTable).values({
-      rideId, raterId: userId, ratedUserId, rating, comment: comment ?? null,
-    }).returning();
-
-    const result: any = await db.execute(sql`
-      SELECT AVG(rating)::real AS avg, COUNT(*)::int AS cnt
-      FROM ratings WHERE rated_user_id = ${ratedUserId}
-    `);
-    const row = (result.rows ?? result)[0];
-    const avg = row?.avg ?? null;
-    if (avg !== null) {
-      await db.update(usersTable).set({ rating: avg }).where(eq(usersTable.id, ratedUserId));
-      const [driverRow] = await db.select().from(driversTable).where(eq(driversTable.userId, ratedUserId)).limit(1);
-      if (driverRow) {
-        await db.update(driversTable).set({ rating: avg }).where(eq(driversTable.id, driverRow.id));
-      }
+    if ("ok" in result && result.ok) {
+      res.status(201).json({ rating: result.rating, newAverage: result.newAverage, totalRatings: result.totalRatings });
     }
-
-    res.status(201).json({ rating: created, newAverage: avg, totalRatings: row?.cnt ?? 0 });
   } catch (e: any) {
     const pgCode = e?.code ?? e?.cause?.code;
     const msg = String(e?.message ?? "");

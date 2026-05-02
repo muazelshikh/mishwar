@@ -46,7 +46,7 @@ router.post("/auth/otp/request", async (req, res) => {
     return;
   }
 
-  const code = String(Math.floor(100000 + crypto.randomInt(900000)));
+  const code = String(100000 + crypto.randomInt(900000));
   const codeHash = hashCode(phone, code);
   const expiresAt = new Date(Date.now() + OTP_TTL_SEC * 1000);
 
@@ -70,15 +70,15 @@ router.post("/auth/otp/verify", async (req, res) => {
     return;
   }
   const { phone, code, purpose } = parsed.data;
-  const codeHash = hashCode(phone, code);
 
-  const [otp] = await db
+  // Look up by phone+purpose only — we then verify the code in constant time and
+  // increment the attempts counter even on wrong codes (prevents brute force).
+  const [latest] = await db
     .select()
     .from(otpCodesTable)
     .where(
       and(
         eq(otpCodesTable.phone, phone),
-        eq(otpCodesTable.codeHash, codeHash),
         eq(otpCodesTable.purpose, purpose),
         isNull(otpCodesTable.usedAt),
         gt(otpCodesTable.expiresAt, new Date()),
@@ -87,17 +87,44 @@ router.post("/auth/otp/verify", async (req, res) => {
     .orderBy(desc(otpCodesTable.createdAt))
     .limit(1);
 
-  if (!otp) {
+  if (!latest) {
     res.status(400).json({ error: "Invalid or expired code" });
     return;
   }
 
-  if (otp.attempts >= MAX_VERIFY_ATTEMPTS) {
+  if (latest.attempts >= MAX_VERIFY_ATTEMPTS) {
+    // Burn the code on lock-out so it can't be retried
+    await db.update(otpCodesTable).set({ usedAt: new Date() }).where(eq(otpCodesTable.id, latest.id));
     res.status(429).json({ error: "Too many verification attempts" });
     return;
   }
 
-  await db.update(otpCodesTable).set({ usedAt: new Date() }).where(eq(otpCodesTable.id, otp.id));
+  const expectedHash = hashCode(phone, code);
+  const a = Buffer.from(latest.codeHash, "hex");
+  const b = Buffer.from(expectedHash, "hex");
+  const valid = a.length === b.length && crypto.timingSafeEqual(a, b);
+
+  if (!valid) {
+    // Atomic increment so concurrent wrong attempts can't bypass the lock-out
+    await db
+      .update(otpCodesTable)
+      .set({ attempts: sql`${otpCodesTable.attempts} + 1` })
+      .where(eq(otpCodesTable.id, latest.id));
+    res.status(400).json({ error: "Invalid or expired code" });
+    return;
+  }
+
+  // Atomic claim: only succeeds if used_at is still null
+  const claimed = await db
+    .update(otpCodesTable)
+    .set({ usedAt: new Date() })
+    .where(and(eq(otpCodesTable.id, latest.id), isNull(otpCodesTable.usedAt)))
+    .returning();
+
+  if (claimed.length === 0) {
+    res.status(400).json({ error: "Code already used" });
+    return;
+  }
 
   if (purpose === "login") {
     const [user] = await db.select().from(usersTable).where(eq(usersTable.phone, phone)).limit(1);
