@@ -109,7 +109,7 @@ router.get("/admin/users", requireAuth, async (req, res) => {
 
 // Update user status
 router.patch("/admin/users/:id/status", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   const { status } = req.body;
 
   if (!["active", "suspended", "banned"].includes(status)) {
@@ -164,7 +164,7 @@ router.get("/admin/drivers", requireAuth, async (req, res) => {
 
 // Update driver status
 router.patch("/admin/drivers/:id/status", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   const { driverStatus } = req.body;
 
   if (!["approved", "rejected", "suspended"].includes(driverStatus)) {

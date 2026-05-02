@@ -104,7 +104,7 @@ router.get("/driver-portal/trips", requireAuth, async (req, res) => {
 
   const status = req.query.status as string;
   if (status) {
-    query = query.where(and(eq(ridesTable.driverId, driverRow.id), eq(ridesTable.status, status)));
+    query = query.where(and(eq(ridesTable.driverId, driverRow.id), eq(ridesTable.status, status as any)));
   }
 
   const rides = await query.limit(limit).offset(offset);

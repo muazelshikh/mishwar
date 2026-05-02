@@ -58,7 +58,7 @@ router.post("/group-trips", requireAuth, async (req, res) => {
 });
 
 router.get("/group-trips/:groupTripId", async (req, res) => {
-  const groupTripId = parseInt(req.params.groupTripId);
+  const groupTripId = parseInt(String(req.params.groupTripId));
   if (isNaN(groupTripId)) { res.status(400).json({ error: "Invalid groupTripId" }); return; }
 
   const [trip] = await db.select().from(groupTripsTable).where(eq(groupTripsTable.id, groupTripId)).limit(1);
@@ -68,7 +68,7 @@ router.get("/group-trips/:groupTripId", async (req, res) => {
 });
 
 router.patch("/group-trips/:groupTripId", requireAuth, async (req, res) => {
-  const groupTripId = parseInt(req.params.groupTripId);
+  const groupTripId = parseInt(String(req.params.groupTripId));
   if (isNaN(groupTripId)) { res.status(400).json({ error: "Invalid groupTripId" }); return; }
 
   const parsed = UpdateGroupTripBody.safeParse(req.body);
@@ -82,7 +82,7 @@ router.patch("/group-trips/:groupTripId", requireAuth, async (req, res) => {
 
 router.post("/group-trips/:groupTripId/register", requireAuth, async (req, res) => {
   const authReq = req as typeof req & { user: { id: number } };
-  const groupTripId = parseInt(req.params.groupTripId);
+  const groupTripId = parseInt(String(req.params.groupTripId));
   if (isNaN(groupTripId)) { res.status(400).json({ error: "Invalid groupTripId" }); return; }
 
   const parsed = RegisterForGroupTripBody.safeParse(req.body);
@@ -102,7 +102,7 @@ router.post("/group-trips/:groupTripId/register", requireAuth, async (req, res) 
     userId: authReq.user.id,
     seatCount,
     totalPrice: trip.pricePerSeat * seatCount,
-    tripDate: parsed.data.tripDate,
+    tripDate: parsed.data.tripDate as unknown as string,
     status: "confirmed",
   }).returning();
 
@@ -110,7 +110,7 @@ router.post("/group-trips/:groupTripId/register", requireAuth, async (req, res) 
 });
 
 router.get("/group-trips/:groupTripId/registrations", requireAuth, async (req, res) => {
-  const groupTripId = parseInt(req.params.groupTripId);
+  const groupTripId = parseInt(String(req.params.groupTripId));
   if (isNaN(groupTripId)) { res.status(400).json({ error: "Invalid groupTripId" }); return; }
 
   const regs = await db.select().from(groupTripRegistrationsTable)

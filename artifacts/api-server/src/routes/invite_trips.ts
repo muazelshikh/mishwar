@@ -68,7 +68,7 @@ router.post("/invite-trips", requireAuth, async (req, res) => {
 
 // Get invite trip by ID
 router.get("/invite-trips/:id", requireAuth, async (req, res) => {
-  const tripId = parseInt(req.params.id);
+  const tripId = parseInt(String(req.params.id));
   const [trip] = await db
     .select()
     .from(inviteTripsTable)
@@ -90,7 +90,7 @@ router.get("/invite-trips/:id", requireAuth, async (req, res) => {
 
 // Update invite trip
 router.patch("/invite-trips/:id", requireAuth, async (req, res) => {
-  const tripId = parseInt(req.params.id);
+  const tripId = parseInt(String(req.params.id));
   const userId = (req as any).user.id;
 
   const [existing] = await db
@@ -200,7 +200,7 @@ router.post("/invite/:inviteCode/respond", async (req, res) => {
 
 // Confirm invite trip
 router.post("/invite-trips/:id/confirm", requireAuth, async (req, res) => {
-  const tripId = parseInt(req.params.id);
+  const tripId = parseInt(String(req.params.id));
   const userId = (req as any).user.id;
 
   const [existing] = await db

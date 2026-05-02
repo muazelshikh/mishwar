@@ -58,7 +58,7 @@ router.post("/rides", requireAuth, async (req, res) => {
 });
 
 router.get("/rides/:rideId", requireAuth, async (req, res) => {
-  const rideId = parseInt(req.params.rideId);
+  const rideId = parseInt(String(req.params.rideId));
   if (isNaN(rideId)) { res.status(400).json({ error: "Invalid rideId" }); return; }
 
   const [ride] = await db.select().from(ridesTable).where(eq(ridesTable.id, rideId)).limit(1);
@@ -68,7 +68,7 @@ router.get("/rides/:rideId", requireAuth, async (req, res) => {
 });
 
 router.patch("/rides/:rideId", requireAuth, async (req, res) => {
-  const rideId = parseInt(req.params.rideId);
+  const rideId = parseInt(String(req.params.rideId));
   if (isNaN(rideId)) { res.status(400).json({ error: "Invalid rideId" }); return; }
 
   const parsed = UpdateRideBody.safeParse(req.body);

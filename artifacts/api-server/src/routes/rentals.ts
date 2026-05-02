@@ -15,7 +15,7 @@ router.get("/rentals", async (req, res) => {
   let query = db.select().from(rentalCarsTable).$dynamic();
 
   if (vehicleType) {
-    query = query.where(eq(rentalCarsTable.vehicleType, vehicleType as string));
+    query = query.where(eq(rentalCarsTable.vehicleType, vehicleType as any));
   }
 
   const cars = await query.limit(limit).offset(offset);
@@ -98,7 +98,7 @@ router.get("/rentals/my-bookings", requireAuth, async (req, res) => {
 
 // Get rental booking
 router.get("/rentals/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
 
   const [booking] = await db
     .select()
@@ -122,7 +122,7 @@ router.get("/rentals/:id", requireAuth, async (req, res) => {
 
 // Cancel rental booking
 router.delete("/rentals/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   const userId = (req as any).user.id;
 
   const [booking] = await db

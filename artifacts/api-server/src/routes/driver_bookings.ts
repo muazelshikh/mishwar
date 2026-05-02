@@ -84,7 +84,7 @@ router.post("/driver-bookings", requireAuth, async (req, res) => {
 
 // Get driver booking
 router.get("/driver-bookings/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
 
   const [booking] = await db
     .select()
@@ -121,7 +121,7 @@ router.get("/driver-bookings/:id", requireAuth, async (req, res) => {
 
 // Update driver booking status
 router.patch("/driver-bookings/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   const { status, driverId } = req.body;
 
   const updates: Record<string, unknown> = {};

@@ -39,7 +39,7 @@ router.post("/subscriptions", requireAuth, async (req, res) => {
     subscriptionType: parsed.data.subscriptionType,
     seatCount,
     pricePerPeriod,
-    startDate: parsed.data.startDate,
+    startDate: parsed.data.startDate as unknown as string,
     status: "active",
   }).returning();
 
@@ -47,7 +47,7 @@ router.post("/subscriptions", requireAuth, async (req, res) => {
 });
 
 router.get("/subscriptions/:subscriptionId", requireAuth, async (req, res) => {
-  const subId = parseInt(req.params.subscriptionId);
+  const subId = parseInt(String(req.params.subscriptionId));
   if (isNaN(subId)) { res.status(400).json({ error: "Invalid subscriptionId" }); return; }
 
   const [sub] = await db.select().from(subscriptionsTable).where(eq(subscriptionsTable.id, subId)).limit(1);
@@ -57,7 +57,7 @@ router.get("/subscriptions/:subscriptionId", requireAuth, async (req, res) => {
 });
 
 router.delete("/subscriptions/:subscriptionId", requireAuth, async (req, res) => {
-  const subId = parseInt(req.params.subscriptionId);
+  const subId = parseInt(String(req.params.subscriptionId));
   if (isNaN(subId)) { res.status(400).json({ error: "Invalid subscriptionId" }); return; }
 
   const [sub] = await db.update(subscriptionsTable)
