@@ -27,8 +27,10 @@ pnpm workspace monorepo — منصة نقل شاملة تشبه Uber مع ميز
 6. **تأجير سيارات** — حجز سيارة بالأيام مع قائمة سيارات متاحة
 7. **استئجار سائق** — حجز سائق خاص بالساعات
 8. **بوابة السائق** — لوحة تحكم للسائقين (أرباح، رحلات، توفر)
-9. **لوحة الإدارة** — إدارة شاملة (admin فقط)
-10. **الإحصائيات** — إحصاءات المنصة (admin فقط)
+9. **بوابة ملاك السيارات** — تسجيل، إدارة الأسطول، تتبع أرباح كل سيارة
+10. **بوابة الشركات** — اشتراك مؤسسي، إدارة موظفين، مسارات نقل، فواتير
+11. **لوحة الإدارة** — إدارة شاملة (admin فقط)
+12. **الإحصائيات** — إحصاءات المنصة (admin فقط)
 
 ### Invite Trip Flow:
 1. المستخدم ينشئ رحلة دعوة → يحصل على رابط فريد
@@ -54,6 +56,8 @@ pnpm workspace monorepo — منصة نقل شاملة تشبه Uber مع ميز
 - `rental_cars` — سيارات التأجير (7 سيارات مبذورة)
 - `rental_bookings` — حجوزات التأجير
 - `driver_bookings` — حجوزات السائقين الخاصة
+- `car_owners` / `owner_vehicles` / `owner_earnings` — بوابة ملاك السيارات
+- `organizations` / `org_employees` / `org_routes` / `org_invoices` — بوابة الشركات
 
 ## أوامر مهمة
 
@@ -81,8 +85,15 @@ pnpm --filter @workspace/api-server run dev
 - `GET/POST /api/rentals` — تأجير السيارات
 - `GET/POST /api/driver-bookings` — حجوزات السائقين
 - `GET/PATCH /api/driver-portal/*` — بوابة السائق
+- `GET/POST/PATCH /api/owner-portal/*` — بوابة ملاك السيارات (profile, vehicles, earnings, stats)
+- `GET/POST/PATCH /api/business-portal/*` — بوابة الشركات (profile, employees, routes, invoices)
 - `GET/PATCH /api/admin/*` — لوحة الإدارة (admin فقط)
 - `GET /api/stats/*` — الإحصائيات
+
+## الربط مع GitHub
+
+- متصل عبر Replit GitHub Connector (OAuth)
+- المستودع: https://github.com/muazelshikh/mishwar (default branch: `main`)
 
 ## هيكل المشروع
 
