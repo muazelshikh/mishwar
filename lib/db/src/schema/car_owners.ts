@@ -5,7 +5,7 @@ import { usersTable } from "./users";
 
 export const carOwnersTable = pgTable("car_owners", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => usersTable.id),
+  userId: integer("user_id").notNull().references(() => usersTable.id).unique(),
   ownerType: text("owner_type", { enum: ["individual", "company"] }).notNull().default("individual"),
   companyName: text("company_name"),
   commercialReg: text("commercial_reg"),
