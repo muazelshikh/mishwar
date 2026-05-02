@@ -32,6 +32,8 @@ pnpm workspace monorepo — منصة نقل شاملة تشبه Uber مع ميز
 11. **لوحة الإدارة** — إدارة شاملة (admin فقط)
 12. **الإحصائيات** — إحصاءات المنصة (admin فقط)
 13. **محفظتي** — رصيد إلكتروني، شحن، سجل معاملات، عمليات دفع
+14. **التقييمات** — تقييم السائق بعد كل رحلة (1-5 نجوم + تعليق)
+15. **OTP عبر SMS** — تسجيل دخول/تسجيل بدون كلمة مرور (مع mock في dev)
 
 ## نظام المحفظة (Wallet System)
 
@@ -39,11 +41,54 @@ pnpm workspace monorepo — منصة نقل شاملة تشبه Uber مع ميز
 - **العملة**: مخزّنة كـ `integer` بوحدة الهلل/القرش (1 ر.س = 100 هلل) لتجنب أخطاء التقريب العشري
 - **الـ API**: `/api/wallet/{me, summary, transactions, payments, topup}`
 - **الواجهة**: `artifacts/mishwar/src/pages/wallet.tsx`
+- **خدمة المحفظة الذرية** (`artifacts/api-server/src/lib/wallet-service.ts`):
+  - `creditWallet()` و `debitWallet()` تعملان داخل `db.transaction` مع `SELECT ... FOR UPDATE`
+  - `InsufficientFundsError` عند الرصيد غير الكافي → HTTP 402
+  - تُنشئ سجلات `wallet_transactions` تلقائياً (positive للإيداع، negative للخصم)
+- **الخصم التلقائي**: عند `PATCH /api/rides/:id` بـ `status="completed"`:
+  - يُخصم `final_price * 100` (هلل) من محفظة الراكب
+  - يُودَع 80% منها في محفظة السائق (`DRIVER_SHARE_PERCENT`)
+  - حماية ضد الخصم المزدوج: التحقق من `existing.status !== "completed"` قبل الخصم
 - **حالة معالج الدفع**: 
   - الجداول جاهزة بأعمدة `stripe_payment_intent_id` و `stripe_checkout_session_id`
   - **Stripe لم يُربط بعد** — رفض المستخدم اقتراح الربط في 2026-05-02
-  - المحفظة تعمل ككتلة برمجية مكتملة، تنشئ سجلات `payments` بحالة `pending` وتنتظر تأكيد من معالج خارجي
-  - **خيارات لاحقة**: إعادة عرض Stripe، استخدام Tap/HyperPay/Moyasar (يحتاج API keys يدوياً)، أو نظام يدوي (تحويل بنكي + تأكيد إداري)
+  - شحن المحفظة عبر `/topup` ينشئ payment بحالة `pending` ينتظر معالج خارجي
+  - **خيارات لاحقة**: Stripe، Tap/HyperPay/Moyasar، أو تحويل بنكي + تأكيد إداري
+
+## نظام التقييمات (Ratings)
+
+- **الجدول**: `ratings` (rideId, raterId, ratedUserId, rating 1-5, comment)
+- **قيد فريد**: `(rater_id, ride_id)` — تقييم واحد لكل راكب لكل رحلة (idempotent)
+- **الـ API**:
+  - `POST /api/ratings` — إنشاء تقييم (يتحقق من ملكية الرحلة، يُحدّث متوسط `users.rating`)
+  - `GET /api/ratings/user/:userId` — قائمة تقييمات مستخدم
+  - `GET /api/ratings/ride/:rideId` — تقييمات رحلة
+- **الواجهة**: `artifacts/mishwar/src/components/rate-driver-dialog.tsx` (5 نجوم + تعليق)
+
+## نظام OTP
+
+- **الجدول**: `otp_codes` (phone, code_hash SHA256, purpose, expires_at, used_at)
+- **الكود**: 6 أرقام عشوائية عبر `crypto.randomInt`، صالح 5 دقائق
+- **التخزين**: hash فقط (لا يُخزن الكود الأصلي) لحماية ضد تسرب DB
+- **حد المعدل**: 5 طلبات لكل رقم في الساعة → 429
+- **الـ API**:
+  - `POST /api/auth/otp/request` — يرسل SMS (mock في dev، Twilio/Unifonic في prod)
+  - `POST /api/auth/otp/verify` — يتحقق من الكود، يُرجع توكن إذا `purpose=login`
+- **مزود SMS**: `artifacts/api-server/src/lib/sms.ts` — يدعم console (dev) / Twilio / Unifonic عبر `SMS_PROVIDER` env
+
+## نظام السجلات (Audit Logs)
+
+- **الجدول**: `audit_logs` (actor_id, action, entity_type, entity_id, diff, ip, user_agent)
+- **المساعد**: `artifacts/api-server/src/lib/audit.ts` → `audit({...})`
+- **الاستخدام المستقبلي**: تسجيل عمليات admin، تغيير الحالات الحساسة
+
+## الأمان (Security Hardening)
+
+- **Password hashing**: `bcrypt` (12 rounds) — يُرقّي تلقائياً hashes القديمة (SHA256-HMAC) عند تسجيل الدخول
+- **JWT**: `iat` + `exp` إجباريان (TTL = 7 أيام)، رفض tokens بدون `exp`
+- **SESSION_SECRET**: يجب ≥16 حرف وليس من القائمة المحظورة، الخادم يرفض البدء وإلا
+- **Constant-time compare**: `crypto.timingSafeEqual` لتوقيعات JWT وكلمات السر القديمة
+- **OTP rate limit**: SQL count على آخر ساعة (يُمنع الإغراق)
 
 ### Invite Trip Flow:
 1. المستخدم ينشئ رحلة دعوة → يحصل على رابط فريد
@@ -102,6 +147,9 @@ pnpm --filter @workspace/api-server run dev
 - `GET/POST/PATCH /api/business-portal/*` — بوابة الشركات (profile, employees, routes, invoices)
 - `GET/PATCH /api/admin/*` — لوحة الإدارة (admin فقط)
 - `GET /api/stats/*` — الإحصائيات
+- `GET /api/wallet/{me,summary,transactions,payments}` + `POST /api/wallet/topup`
+- `POST /api/ratings`, `GET /api/ratings/user/:id`, `GET /api/ratings/ride/:id`
+- `POST /api/auth/otp/request`, `POST /api/auth/otp/verify`
 
 ## الربط مع GitHub
 

@@ -12,3 +12,6 @@ export * from "./organizations";
 export * from "./wallets";
 export * from "./wallet_transactions";
 export * from "./payments";
+export * from "./ratings";
+export * from "./otp_codes";
+export * from "./audit_logs";

@@ -3,11 +3,12 @@ import { useGetRide, useUpdateRide } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, MapPin, Calendar, Clock, User, Car, Phone, AlertCircle } from "lucide-react";
+import { ArrowRight, MapPin, Calendar, Clock, User, Car, Phone, AlertCircle, Star } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetRideQueryKey } from "@workspace/api-client-react";
+import { RateDriverDialog } from "@/components/rate-driver-dialog";
 
 export default function RideDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,8 +35,21 @@ export default function RideDetail() {
       data: { status: newStatus }
     }, {
       onSuccess: (updatedRide) => {
-        toast({ title: "تم تحديث حالة الرحلة" });
+        toast({ title: newStatus === "completed" ? "تم إنهاء الرحلة وخصم المبلغ من المحفظة" : "تم تحديث حالة الرحلة" });
         queryClient.setQueryData(getGetRideQueryKey(rideId), updatedRide);
+        queryClient.invalidateQueries();
+      },
+      onError: (err: any) => {
+        const status = err?.response?.status ?? err?.status;
+        if (status === 402) {
+          toast({
+            title: "رصيد المحفظة غير كافٍ",
+            description: "يرجى شحن المحفظة قبل إنهاء الرحلة",
+            variant: "destructive",
+          });
+        } else {
+          toast({ title: "تعذر تحديث حالة الرحلة", variant: "destructive" });
+        }
       }
     });
   };
@@ -192,6 +206,22 @@ export default function RideDetail() {
               إلغاء الطلب
             </Button>
           </div>
+        )}
+
+        {/* Rate the driver after a completed ride (passenger only) */}
+        {!isDriver && !isAdmin && ride.status === 'completed' && ride.driver && (
+          <Card className="md:col-span-2 border-yellow-500/30 bg-yellow-500/5">
+            <CardContent className="p-6 flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <Star className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+                <div>
+                  <p className="font-bold">كيف كانت رحلتك مع {ride.driver.name}؟</p>
+                  <p className="text-sm text-muted-foreground">شاركنا تقييمك ليستفيد منه الجميع</p>
+                </div>
+              </div>
+              <RateDriverDialog rideId={ride.id} ratedName={ride.driver.name} />
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

@@ -14,6 +14,8 @@ import adminRouter from "./admin";
 import ownerPortalRouter from "./owner_portal";
 import businessPortalRouter from "./business_portal";
 import walletRouter from "./wallet";
+import ratingsRouter from "./ratings";
+import otpRouter from "./otp";
 
 const router: IRouter = Router();
 
@@ -32,5 +34,7 @@ router.use(adminRouter);
 router.use(ownerPortalRouter);
 router.use(businessPortalRouter);
 router.use(walletRouter);
+router.use(ratingsRouter);
+router.use(otpRouter);
 
 export default router;
