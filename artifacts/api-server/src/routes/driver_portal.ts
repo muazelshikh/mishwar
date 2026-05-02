@@ -8,7 +8,7 @@ const router = Router();
 
 // Get driver profile
 router.get("/driver-portal/me", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const [driverRow] = await db
     .select()
@@ -38,7 +38,7 @@ router.get("/driver-portal/me", requireAuth, async (req, res) => {
 
 // Toggle availability
 router.patch("/driver-portal/availability", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const { isAvailable } = req.body;
 
   if (typeof isAvailable !== "boolean") {
@@ -80,7 +80,7 @@ router.patch("/driver-portal/availability", requireAuth, async (req, res) => {
 
 // Get driver's trips
 router.get("/driver-portal/trips", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const limit = parseInt(req.query.limit as string) || 20;
   const offset = parseInt(req.query.offset as string) || 0;
 
@@ -113,7 +113,7 @@ router.get("/driver-portal/trips", requireAuth, async (req, res) => {
 
 // Get earnings
 router.get("/driver-portal/earnings", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const [driverRow] = await db
     .select()
@@ -164,7 +164,7 @@ router.get("/driver-portal/earnings", requireAuth, async (req, res) => {
 
 // Get driver stats
 router.get("/driver-portal/stats", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const [driverRow] = await db
     .select()

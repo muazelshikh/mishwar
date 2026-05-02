@@ -70,7 +70,7 @@ const addRouteSchema = z.object({
 }).strict();
 
 router.get("/business-portal/me", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.status(404).json({ error: "Organization not found" }); return; }
   const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
@@ -78,7 +78,7 @@ router.get("/business-portal/me", requireAuth, async (req, res) => {
 });
 
 router.post("/business-portal/register", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -105,7 +105,7 @@ router.post("/business-portal/register", requireAuth, async (req, res) => {
 });
 
 router.patch("/business-portal/me", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const parsed = updateOrgSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -125,7 +125,7 @@ router.patch("/business-portal/me", requireAuth, async (req, res) => {
 });
 
 router.get("/business-portal/stats", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.json({ employees: 0, activeEmployees: 0, routes: 0, monthlySpend: 0, pendingInvoices: 0 }); return; }
   const employees = await db.select().from(orgEmployeesTable).where(eq(orgEmployeesTable.organizationId, org.id));
@@ -145,7 +145,7 @@ router.get("/business-portal/stats", requireAuth, async (req, res) => {
 });
 
 router.get("/business-portal/employees", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.json({ items: [] }); return; }
   const employees = await db.select().from(orgEmployeesTable)
@@ -155,7 +155,7 @@ router.get("/business-portal/employees", requireAuth, async (req, res) => {
 });
 
 router.post("/business-portal/employees", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.status(404).json({ error: "Organization not found" }); return; }
   const parsed = addEmployeeSchema.safeParse(req.body);
@@ -179,7 +179,7 @@ router.post("/business-portal/employees", requireAuth, async (req, res) => {
 });
 
 router.patch("/business-portal/employees/:id", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.status(404).json({ error: "Not found" }); return; }
   const empId = Number(req.params.id);
@@ -206,7 +206,7 @@ router.patch("/business-portal/employees/:id", requireAuth, async (req, res) => 
 });
 
 router.delete("/business-portal/employees/:id", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.status(404).json({ error: "Not found" }); return; }
   const empId = Number(req.params.id);
@@ -220,7 +220,7 @@ router.delete("/business-portal/employees/:id", requireAuth, async (req, res) =>
 });
 
 router.get("/business-portal/routes", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.json({ items: [] }); return; }
   const routes = await db.select().from(orgRoutesTable).where(eq(orgRoutesTable.organizationId, org.id));
@@ -228,7 +228,7 @@ router.get("/business-portal/routes", requireAuth, async (req, res) => {
 });
 
 router.post("/business-portal/routes", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.status(404).json({ error: "Not found" }); return; }
   const parsed = addRouteSchema.safeParse(req.body);
@@ -251,7 +251,7 @@ router.post("/business-portal/routes", requireAuth, async (req, res) => {
 });
 
 router.get("/business-portal/invoices", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [org] = await db.select().from(organizationsTable).where(eq(organizationsTable.userId, userId)).limit(1);
   if (!org) { res.json({ items: [] }); return; }
   const invoices = await db.select().from(orgInvoicesTable)

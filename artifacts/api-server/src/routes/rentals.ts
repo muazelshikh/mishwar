@@ -26,7 +26,7 @@ router.get("/rentals", async (req, res) => {
 
 // Book a rental car
 router.post("/rentals", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const { carId, startDate, endDate, notes } = req.body;
 
   if (!carId || !startDate || !endDate) {
@@ -74,7 +74,7 @@ router.post("/rentals", requireAuth, async (req, res) => {
 
 // List my rental bookings
 router.get("/rentals/my-bookings", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const bookings = await db
     .select()
@@ -123,7 +123,7 @@ router.get("/rentals/:id", requireAuth, async (req, res) => {
 // Cancel rental booking
 router.delete("/rentals/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id);
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const [booking] = await db
     .select()

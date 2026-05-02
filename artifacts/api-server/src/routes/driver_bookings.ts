@@ -8,7 +8,7 @@ const router = Router();
 
 // List my driver bookings
 router.get("/driver-bookings", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
 
   const bookings = await db
     .select()
@@ -49,7 +49,7 @@ router.get("/driver-bookings", requireAuth, async (req, res) => {
 
 // Book a private driver
 router.post("/driver-bookings", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const { driverId, purpose, startDatetime, endDatetime, location, notes } = req.body;
 
   if (!purpose || !startDatetime || !endDatetime || !location) {

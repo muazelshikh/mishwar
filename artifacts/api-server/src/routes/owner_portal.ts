@@ -43,7 +43,7 @@ const updateVehicleSchema = z.object({
 }).strict();
 
 router.get("/owner-portal/me", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) {
     res.status(404).json({ error: "Owner profile not found" });
@@ -54,7 +54,7 @@ router.get("/owner-portal/me", requireAuth, async (req, res) => {
 });
 
 router.post("/owner-portal/register", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -77,7 +77,7 @@ router.post("/owner-portal/register", requireAuth, async (req, res) => {
 });
 
 router.patch("/owner-portal/me", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const parsed = updateProfileSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.issues });
@@ -95,7 +95,7 @@ router.patch("/owner-portal/me", requireAuth, async (req, res) => {
 });
 
 router.get("/owner-portal/vehicles", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) { res.json({ items: [] }); return; }
   const vehicles = await db.select().from(ownerVehiclesTable)
@@ -105,7 +105,7 @@ router.get("/owner-portal/vehicles", requireAuth, async (req, res) => {
 });
 
 router.post("/owner-portal/vehicles", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) { res.status(404).json({ error: "Owner profile not found" }); return; }
   const parsed = addVehicleSchema.safeParse(req.body);
@@ -133,7 +133,7 @@ router.post("/owner-portal/vehicles", requireAuth, async (req, res) => {
 });
 
 router.patch("/owner-portal/vehicles/:id", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) { res.status(404).json({ error: "Not found" }); return; }
   const vehicleId = Number(req.params.id);
@@ -162,7 +162,7 @@ router.patch("/owner-portal/vehicles/:id", requireAuth, async (req, res) => {
 });
 
 router.get("/owner-portal/earnings", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) { res.json({ items: [], stats: { today: 0, thisMonth: 0, total: 0 } }); return; }
   const earnings = await db.select().from(ownerEarningsTable)
@@ -186,7 +186,7 @@ router.get("/owner-portal/earnings", requireAuth, async (req, res) => {
 });
 
 router.get("/owner-portal/stats", requireAuth, async (req, res) => {
-  const userId = (req as any).userId;
+  const userId = (req as any).user.id;
   const [owner] = await db.select().from(carOwnersTable).where(eq(carOwnersTable.userId, userId)).limit(1);
   if (!owner) {
     res.json({ totalVehicles: 0, activeVehicles: 0, totalEarnings: 0, monthEarnings: 0, pendingEarnings: 0 });
