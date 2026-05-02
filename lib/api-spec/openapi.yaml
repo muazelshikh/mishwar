@@ -1,0 +1,2011 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.2.0
+  description: Mishwar - Complete ride hailing and group trips platform
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: auth
+  - name: users
+  - name: drivers
+  - name: rides
+  - name: groupTrips
+  - name: subscriptions
+  - name: inviteTrips
+  - name: rentals
+  - name: driverBookings
+  - name: driverPortal
+  - name: admin
+  - name: stats
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # Auth
+  /auth/register:
+    post:
+      operationId: registerUser
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/login:
+    post:
+      operationId: loginUser
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # Rides
+  /rides:
+    get:
+      operationId: listRides
+      tags: [rides]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, in_progress, completed, cancelled]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideList"
+    post:
+      operationId: createRide
+      tags: [rides]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRideBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ride"
+
+  /rides/{rideId}:
+    get:
+      operationId: getRide
+      tags: [rides]
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ride"
+    patch:
+      operationId: updateRide
+      tags: [rides]
+      parameters:
+        - name: rideId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRideBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ride"
+
+  # Group Trips
+  /group-trips:
+    get:
+      operationId: listGroupTrips
+      tags: [groupTrips]
+      parameters:
+        - name: fromCity
+          in: query
+          schema:
+            type: string
+        - name: toCity
+          in: query
+          schema:
+            type: string
+        - name: scheduleType
+          in: query
+          schema:
+            type: string
+            enum: [weekly, monthly, one_time]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTripList"
+    post:
+      operationId: createGroupTrip
+      tags: [groupTrips]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupTripBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTrip"
+
+  /group-trips/{groupTripId}:
+    get:
+      operationId: getGroupTrip
+      tags: [groupTrips]
+      parameters:
+        - name: groupTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTrip"
+    patch:
+      operationId: updateGroupTrip
+      tags: [groupTrips]
+      parameters:
+        - name: groupTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupTripBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTrip"
+
+  /group-trips/{groupTripId}/register:
+    post:
+      operationId: registerForGroupTrip
+      tags: [groupTrips]
+      parameters:
+        - name: groupTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterGroupTripBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTripRegistration"
+
+  /group-trips/{groupTripId}/registrations:
+    get:
+      operationId: listGroupTripRegistrations
+      tags: [groupTrips]
+      parameters:
+        - name: groupTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTripRegistrationList"
+
+  # Subscriptions
+  /subscriptions:
+    get:
+      operationId: listSubscriptions
+      tags: [subscriptions]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubscriptionList"
+    post:
+      operationId: createSubscription
+      tags: [subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSubscriptionBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  /subscriptions/{subscriptionId}:
+    get:
+      operationId: getSubscription
+      tags: [subscriptions]
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+    delete:
+      operationId: cancelSubscription
+      tags: [subscriptions]
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Subscription"
+
+  # Drivers
+  /drivers:
+    get:
+      operationId: listDrivers
+      tags: [drivers]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverList"
+    post:
+      operationId: createDriver
+      tags: [drivers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDriverBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /drivers/{driverId}:
+    get:
+      operationId: getDriver
+      tags: [drivers]
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  # Invite Trips
+  /invite-trips:
+    get:
+      operationId: listInviteTrips
+      tags: [inviteTrips]
+      summary: List my invite trips
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTripList"
+    post:
+      operationId: createInviteTrip
+      tags: [inviteTrips]
+      summary: Create an invite trip
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInviteTripBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTrip"
+
+  /invite-trips/{inviteTripId}:
+    get:
+      operationId: getInviteTrip
+      tags: [inviteTrips]
+      parameters:
+        - name: inviteTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTrip"
+    patch:
+      operationId: updateInviteTrip
+      tags: [inviteTrips]
+      parameters:
+        - name: inviteTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateInviteTripBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTrip"
+
+  /invite/{inviteCode}:
+    get:
+      operationId: getInviteTripByCode
+      tags: [inviteTrips]
+      summary: Get trip by invite code (public)
+      parameters:
+        - name: inviteCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTrip"
+
+  /invite/{inviteCode}/respond:
+    post:
+      operationId: respondToInvite
+      tags: [inviteTrips]
+      summary: Accept or decline an invite
+      parameters:
+        - name: inviteCode
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RespondToInviteBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteGuest"
+
+  /invite-trips/{inviteTripId}/confirm:
+    post:
+      operationId: confirmInviteTrip
+      tags: [inviteTrips]
+      summary: Confirm and book the invite trip
+      parameters:
+        - name: inviteTripId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InviteTrip"
+
+  # Rentals
+  /rentals:
+    get:
+      operationId: listRentals
+      tags: [rentals]
+      summary: List available rental cars
+      parameters:
+        - name: vehicleType
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalCarList"
+    post:
+      operationId: createRentalBooking
+      tags: [rentals]
+      summary: Book a rental car
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRentalBookingBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalBooking"
+
+  /rentals/my-bookings:
+    get:
+      operationId: listMyRentalBookings
+      tags: [rentals]
+      summary: List my rental bookings
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalBookingList"
+
+  /rentals/{rentalId}:
+    get:
+      operationId: getRentalBooking
+      tags: [rentals]
+      parameters:
+        - name: rentalId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalBooking"
+    delete:
+      operationId: cancelRentalBooking
+      tags: [rentals]
+      parameters:
+        - name: rentalId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RentalBooking"
+
+  # Driver Bookings
+  /driver-bookings:
+    get:
+      operationId: listDriverBookings
+      tags: [driverBookings]
+      summary: List my driver bookings
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverBookingList"
+    post:
+      operationId: createDriverBooking
+      tags: [driverBookings]
+      summary: Book a private driver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDriverBookingBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverBooking"
+
+  /driver-bookings/{bookingId}:
+    get:
+      operationId: getDriverBooking
+      tags: [driverBookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverBooking"
+    patch:
+      operationId: updateDriverBooking
+      tags: [driverBookings]
+      parameters:
+        - name: bookingId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDriverBookingBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverBooking"
+
+  # Driver Portal
+  /driver-portal/me:
+    get:
+      operationId: getDriverProfile
+      tags: [driverPortal]
+      summary: Get my driver profile
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverProfile"
+
+  /driver-portal/availability:
+    patch:
+      operationId: updateDriverAvailability
+      tags: [driverPortal]
+      summary: Toggle online/offline status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAvailabilityBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverProfile"
+
+  /driver-portal/trips:
+    get:
+      operationId: getDriverTrips
+      tags: [driverPortal]
+      summary: Get my assigned rides as driver
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideList"
+
+  /driver-portal/earnings:
+    get:
+      operationId: getDriverEarnings
+      tags: [driverPortal]
+      summary: Get driver earnings summary
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverEarnings"
+
+  /driver-portal/stats:
+    get:
+      operationId: getDriverStats
+      tags: [driverPortal]
+      summary: Get driver stats
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverStats"
+
+  # Admin
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Full admin statistics
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: listAdminUsers
+      tags: [admin]
+      summary: List all users
+      parameters:
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [passenger, driver, admin]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, suspended, banned]
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+
+  /admin/users/{userId}/status:
+    patch:
+      operationId: updateUserStatus
+      tags: [admin]
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/drivers:
+    get:
+      operationId: listAdminDrivers
+      tags: [admin]
+      summary: List all drivers
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, suspended]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDriverList"
+
+  /admin/drivers/{driverId}/status:
+    patch:
+      operationId: updateDriverStatus
+      tags: [admin]
+      parameters:
+        - name: driverId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDriverStatusBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+
+  /admin/trips:
+    get:
+      operationId: listAdminTrips
+      tags: [admin]
+      summary: List all trips/rides
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RideList"
+
+  /admin/group-trips:
+    get:
+      operationId: listAdminGroupTrips
+      tags: [admin]
+      summary: List all group trips
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupTripList"
+
+  # Stats
+  /stats/dashboard:
+    get:
+      operationId: getDashboardStats
+      tags: [stats]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /stats/my-activity:
+    get:
+      operationId: getMyActivity
+      tags: [stats]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserActivity"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    RegisterBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver, admin]
+          default: passenger
+      required: [name, phone, password]
+
+    LoginBody:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required: [phone, password]
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required: [token, user]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [passenger, driver, admin]
+        avatarUrl:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [active, suspended, banned]
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, name, phone, role, createdAt]
+
+    Driver:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        vehicleMake:
+          type: string
+        vehicleModel:
+          type: string
+        vehicleYear:
+          type: integer
+        vehiclePlate:
+          type: string
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl, bus, van, minibus]
+        rating:
+          type: number
+          nullable: true
+        totalTrips:
+          type: integer
+        isAvailable:
+          type: boolean
+        driverStatus:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+          nullable: true
+        avatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, name, phone, vehicleMake, vehicleModel, vehicleYear, vehiclePlate, vehicleType, totalTrips, isAvailable, createdAt]
+
+    DriverList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Driver"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateDriverBody:
+      type: object
+      properties:
+        vehicleMake:
+          type: string
+        vehicleModel:
+          type: string
+        vehicleYear:
+          type: integer
+        vehiclePlate:
+          type: string
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl, bus, van, minibus]
+      required: [vehicleMake, vehicleModel, vehicleYear, vehiclePlate, vehicleType]
+
+    Ride:
+      type: object
+      properties:
+        id:
+          type: integer
+        passengerId:
+          type: integer
+        driverId:
+          type: integer
+          nullable: true
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        fromLat:
+          type: number
+          nullable: true
+        fromLng:
+          type: number
+          nullable: true
+        toLat:
+          type: number
+          nullable: true
+        toLng:
+          type: number
+          nullable: true
+        status:
+          type: string
+          enum: [pending, accepted, in_progress, completed, cancelled]
+        estimatedPrice:
+          type: number
+          nullable: true
+        finalPrice:
+          type: number
+          nullable: true
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl]
+        scheduledAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        driver:
+          $ref: "#/components/schemas/Driver"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, passengerId, fromAddress, toAddress, status, vehicleType, createdAt]
+
+    RideList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ride"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateRideBody:
+      type: object
+      properties:
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        fromLat:
+          type: number
+        fromLng:
+          type: number
+        toLat:
+          type: number
+        toLng:
+          type: number
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl]
+          default: economy
+        scheduledAt:
+          type: string
+          format: date-time
+        notes:
+          type: string
+      required: [fromAddress, toAddress]
+
+    UpdateRideBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [accepted, in_progress, completed, cancelled]
+        driverId:
+          type: integer
+        finalPrice:
+          type: number
+
+    GroupTrip:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        fromCity:
+          type: string
+        toCity:
+          type: string
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        departureTime:
+          type: string
+        scheduleType:
+          type: string
+          enum: [weekly, monthly, one_time]
+        scheduleDays:
+          type: string
+          nullable: true
+        scheduleDay:
+          type: integer
+          nullable: true
+        capacity:
+          type: integer
+        registeredCount:
+          type: integer
+        pricePerSeat:
+          type: number
+        vehicleType:
+          type: string
+          enum: [bus, van, minibus]
+        driverId:
+          type: integer
+          nullable: true
+        driver:
+          $ref: "#/components/schemas/Driver"
+          nullable: true
+        isActive:
+          type: boolean
+        nextDepartureDate:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, title, fromCity, toCity, fromAddress, toAddress, departureTime, scheduleType, capacity, registeredCount, pricePerSeat, vehicleType, isActive, createdAt]
+
+    GroupTripList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupTrip"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateGroupTripBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        fromCity:
+          type: string
+        toCity:
+          type: string
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        departureTime:
+          type: string
+        scheduleType:
+          type: string
+          enum: [weekly, monthly, one_time]
+        scheduleDays:
+          type: string
+        scheduleDay:
+          type: integer
+        capacity:
+          type: integer
+        pricePerSeat:
+          type: number
+        vehicleType:
+          type: string
+          enum: [bus, van, minibus]
+        driverId:
+          type: integer
+      required: [title, fromCity, toCity, fromAddress, toAddress, departureTime, scheduleType, capacity, pricePerSeat, vehicleType]
+
+    UpdateGroupTripBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        departureTime:
+          type: string
+        capacity:
+          type: integer
+        pricePerSeat:
+          type: number
+        isActive:
+          type: boolean
+        driverId:
+          type: integer
+
+    GroupTripRegistration:
+      type: object
+      properties:
+        id:
+          type: integer
+        groupTripId:
+          type: integer
+        userId:
+          type: integer
+        seatCount:
+          type: integer
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [confirmed, cancelled, pending]
+        tripDate:
+          type: string
+          format: date
+        groupTrip:
+          $ref: "#/components/schemas/GroupTrip"
+          nullable: true
+        user:
+          $ref: "#/components/schemas/User"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, groupTripId, userId, seatCount, totalPrice, status, tripDate, createdAt]
+
+    GroupTripRegistrationList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupTripRegistration"
+        total:
+          type: integer
+      required: [items, total]
+
+    RegisterGroupTripBody:
+      type: object
+      properties:
+        seatCount:
+          type: integer
+          default: 1
+          minimum: 1
+        tripDate:
+          type: string
+          format: date
+      required: [tripDate]
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        groupTripId:
+          type: integer
+        subscriptionType:
+          type: string
+          enum: [weekly, monthly]
+        seatCount:
+          type: integer
+        pricePerPeriod:
+          type: number
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+          nullable: true
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        groupTrip:
+          $ref: "#/components/schemas/GroupTrip"
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, groupTripId, subscriptionType, seatCount, pricePerPeriod, startDate, status, createdAt]
+
+    SubscriptionList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Subscription"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateSubscriptionBody:
+      type: object
+      properties:
+        groupTripId:
+          type: integer
+        subscriptionType:
+          type: string
+          enum: [weekly, monthly]
+        seatCount:
+          type: integer
+          default: 1
+          minimum: 1
+        startDate:
+          type: string
+          format: date
+      required: [groupTripId, subscriptionType, startDate]
+
+    # Invite Trips
+    InviteTrip:
+      type: object
+      properties:
+        id:
+          type: integer
+        creatorId:
+          type: integer
+        title:
+          type: string
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl, bus, van, minibus]
+        scheduledAt:
+          type: string
+          format: date-time
+        inviteCode:
+          type: string
+        status:
+          type: string
+          enum: [open, confirmed, completed, cancelled]
+        maxGuests:
+          type: integer
+        notes:
+          type: string
+          nullable: true
+        estimatedPrice:
+          type: number
+          nullable: true
+        guests:
+          type: array
+          items:
+            $ref: "#/components/schemas/InviteGuest"
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, creatorId, title, fromAddress, toAddress, vehicleType, scheduledAt, inviteCode, status, maxGuests, createdAt]
+
+    InviteTripList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/InviteTrip"
+        total:
+          type: integer
+      required: [items, total]
+
+    InviteGuest:
+      type: object
+      properties:
+        id:
+          type: integer
+        inviteTripId:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        pickupAddress:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [pending, accepted, declined]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, inviteTripId, name, phone, status, createdAt]
+
+    CreateInviteTripBody:
+      type: object
+      properties:
+        title:
+          type: string
+        fromAddress:
+          type: string
+        toAddress:
+          type: string
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl, bus, van, minibus]
+        scheduledAt:
+          type: string
+          format: date-time
+        maxGuests:
+          type: integer
+          default: 4
+        notes:
+          type: string
+      required: [title, fromAddress, toAddress, vehicleType, scheduledAt]
+
+    UpdateInviteTripBody:
+      type: object
+      properties:
+        title:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [confirmed, cancelled]
+        notes:
+          type: string
+
+    RespondToInviteBody:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        pickupAddress:
+          type: string
+        response:
+          type: string
+          enum: [accepted, declined]
+      required: [name, phone, response]
+
+    # Rentals
+    RentalCar:
+      type: object
+      properties:
+        id:
+          type: integer
+        make:
+          type: string
+        model:
+          type: string
+        year:
+          type: integer
+        plate:
+          type: string
+        vehicleType:
+          type: string
+          enum: [economy, comfort, xl, suv, luxury]
+        dailyRate:
+          type: number
+        isAvailable:
+          type: boolean
+        imageUrl:
+          type: string
+          nullable: true
+        features:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, make, model, year, plate, vehicleType, dailyRate, isAvailable, createdAt]
+
+    RentalCarList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentalCar"
+        total:
+          type: integer
+      required: [items, total]
+
+    RentalBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        carId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        totalDays:
+          type: integer
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [pending, confirmed, active, returned, cancelled]
+        car:
+          $ref: "#/components/schemas/RentalCar"
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, carId, startDate, endDate, totalDays, totalPrice, status, createdAt]
+
+    RentalBookingList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RentalBooking"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateRentalBookingBody:
+      type: object
+      properties:
+        carId:
+          type: integer
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        notes:
+          type: string
+      required: [carId, startDate, endDate]
+
+    # Driver Bookings
+    DriverBooking:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        driverId:
+          type: integer
+          nullable: true
+        purpose:
+          type: string
+        startDatetime:
+          type: string
+          format: date-time
+        endDatetime:
+          type: string
+          format: date-time
+        location:
+          type: string
+        totalHours:
+          type: number
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [pending, confirmed, active, completed, cancelled]
+        driver:
+          $ref: "#/components/schemas/Driver"
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, purpose, startDatetime, endDatetime, location, totalHours, totalPrice, status, createdAt]
+
+    DriverBookingList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DriverBooking"
+        total:
+          type: integer
+      required: [items, total]
+
+    CreateDriverBookingBody:
+      type: object
+      properties:
+        driverId:
+          type: integer
+        purpose:
+          type: string
+        startDatetime:
+          type: string
+          format: date-time
+        endDatetime:
+          type: string
+          format: date-time
+        location:
+          type: string
+        notes:
+          type: string
+      required: [purpose, startDatetime, endDatetime, location]
+
+    UpdateDriverBookingBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [confirmed, active, completed, cancelled]
+        driverId:
+          type: integer
+
+    # Driver Portal
+    DriverProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        vehicleMake:
+          type: string
+        vehicleModel:
+          type: string
+        vehicleYear:
+          type: integer
+        vehiclePlate:
+          type: string
+        vehicleType:
+          type: string
+        rating:
+          type: number
+          nullable: true
+        totalTrips:
+          type: integer
+        isAvailable:
+          type: boolean
+        driverStatus:
+          type: string
+          enum: [pending, approved, rejected, suspended]
+        avatarUrl:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, name, phone, vehicleMake, vehicleModel, vehicleYear, vehiclePlate, vehicleType, totalTrips, isAvailable, driverStatus, createdAt]
+
+    UpdateAvailabilityBody:
+      type: object
+      properties:
+        isAvailable:
+          type: boolean
+      required: [isAvailable]
+
+    DriverEarnings:
+      type: object
+      properties:
+        today:
+          type: number
+        thisWeek:
+          type: number
+        thisMonth:
+          type: number
+        total:
+          type: number
+        todayTrips:
+          type: integer
+        weekTrips:
+          type: integer
+        monthTrips:
+          type: integer
+      required: [today, thisWeek, thisMonth, total, todayTrips, weekTrips, monthTrips]
+
+    DriverStats:
+      type: object
+      properties:
+        totalTrips:
+          type: integer
+        completedTrips:
+          type: integer
+        cancelledTrips:
+          type: integer
+        rating:
+          type: number
+          nullable: true
+        acceptanceRate:
+          type: number
+        isAvailable:
+          type: boolean
+      required: [totalTrips, completedTrips, cancelledTrips, acceptanceRate, isAvailable]
+
+    # Admin schemas
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalDrivers:
+          type: integer
+        activeDrivers:
+          type: integer
+        pendingDrivers:
+          type: integer
+        totalRides:
+          type: integer
+        activeRides:
+          type: integer
+        completedRidesToday:
+          type: integer
+        totalGroupTrips:
+          type: integer
+        activeGroupTrips:
+          type: integer
+        totalSubscriptions:
+          type: integer
+        totalRentals:
+          type: integer
+        totalDriverBookings:
+          type: integer
+        totalInviteTrips:
+          type: integer
+        revenueToday:
+          type: number
+        revenueThisMonth:
+          type: number
+        revenueTotal:
+          type: number
+      required: [totalUsers, totalDrivers, activeDrivers, pendingDrivers, totalRides, activeRides, completedRidesToday, totalGroupTrips, activeGroupTrips, totalSubscriptions, totalRentals, totalDriverBookings, totalInviteTrips, revenueToday, revenueThisMonth, revenueTotal]
+
+    AdminUserList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+      required: [items, total]
+
+    AdminDriverList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Driver"
+        total:
+          type: integer
+      required: [items, total]
+
+    UpdateUserStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [active, suspended, banned]
+      required: [status]
+
+    UpdateDriverStatusBody:
+      type: object
+      properties:
+        driverStatus:
+          type: string
+          enum: [approved, rejected, suspended]
+        reason:
+          type: string
+      required: [driverStatus]
+
+    # Stats
+    DashboardStats:
+      type: object
+      properties:
+        totalRides:
+          type: integer
+        activeRides:
+          type: integer
+        totalGroupTrips:
+          type: integer
+        activeGroupTrips:
+          type: integer
+        totalSubscriptions:
+          type: integer
+        totalPassengers:
+          type: integer
+        totalDrivers:
+          type: integer
+        completedRidesToday:
+          type: integer
+        revenueThisMonth:
+          type: number
+      required: [totalRides, activeRides, totalGroupTrips, activeGroupTrips, totalSubscriptions, totalPassengers, totalDrivers, completedRidesToday, revenueThisMonth]
+
+    UserActivity:
+      type: object
+      properties:
+        totalRides:
+          type: integer
+        completedRides:
+          type: integer
+        activeSubscriptions:
+          type: integer
+        upcomingGroupTrips:
+          type: integer
+        totalSpent:
+          type: number
+        recentRides:
+          type: array
+          items:
+            $ref: "#/components/schemas/Ride"
+        recentRegistrations:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupTripRegistration"
+      required: [totalRides, completedRides, activeSubscriptions, upcomingGroupTrips, totalSpent, recentRides, recentRegistrations]
