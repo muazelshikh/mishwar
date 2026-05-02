@@ -79,7 +79,7 @@ function TopUpCard() {
         method: "POST",
         body: JSON.stringify({ amount: Math.round(sar * 100) }),
         headers: { "Content-Type": "application/json" },
-      }).then((r: Response) => r.json()),
+      }),
     onSuccess: () => {
       toast({ title: "تم إنشاء طلب الشحن", description: "سيتم تحويلك لصفحة الدفع بمجرد ربط Stripe" });
       qc.invalidateQueries({ queryKey: ["/api/wallet/payments"] });
@@ -157,7 +157,7 @@ function TopUpCard() {
 function TransactionsList() {
   const { data, isLoading } = useQuery<{ items: any[] }>({
     queryKey: ["/api/wallet/transactions"],
-    queryFn: () => customFetch("/api/wallet/transactions").then((r: Response) => r.json()),
+    queryFn: () => customFetch("/api/wallet/transactions"),
   });
 
   if (isLoading) return <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>;
@@ -214,7 +214,7 @@ function TransactionsList() {
 function PaymentsList() {
   const { data, isLoading } = useQuery<{ items: any[] }>({
     queryKey: ["/api/wallet/payments"],
-    queryFn: () => customFetch("/api/wallet/payments").then((r: Response) => r.json()),
+    queryFn: () => customFetch("/api/wallet/payments"),
   });
   if (isLoading) return <div className="text-center py-8 text-muted-foreground">جاري التحميل...</div>;
   const items = data?.items ?? [];
@@ -264,7 +264,7 @@ function PaymentsList() {
 export default function WalletPage() {
   const { data: summary } = useQuery<any>({
     queryKey: ["/api/wallet/summary"],
-    queryFn: () => customFetch("/api/wallet/summary").then((r: Response) => r.json()),
+    queryFn: () => customFetch("/api/wallet/summary"),
   });
 
   return (
